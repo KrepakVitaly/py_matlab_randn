@@ -6,7 +6,7 @@ import numpy
 mkl_root_dir = os.environ.get('MKLROOT')
 
 if mkl_root_dir is None:
-    print 'MKLROOT envorinment variable is not defined. VSL version will not be installed'
+    print 'MKLROOT environment variable is not defined. VSL version will not be installed'
 
 mkl_include_path = os.path.join(mkl_root_dir, 'include')
 mkl_libs_path = os.path.join(mkl_root_dir, 'lib', 'intel64')
