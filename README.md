@@ -1,8 +1,8 @@
 # py_matlab_randn
 Implementation of various random number generators for Python
 Currently there is:
-1) MATLAB's randn() for normal distribution
-2) Parallel generator that uses Intel's VSL
+1. MATLAB's randn() for normal distribution
+2. Parallel generator that uses Intel's VSL
 
 ###### Installation:
 1. Set up MKLROOT environment variable if you want VSL version to be installed. This variable should contain a path to Intel MKL library.
