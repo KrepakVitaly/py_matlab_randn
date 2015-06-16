@@ -7,9 +7,11 @@ mkl_root_dir = os.environ.get('MKLROOT')
 
 if mkl_root_dir is None:
     print 'MKLROOT environment variable is not defined. VSL version will not be installed'
-
-mkl_include_path = os.path.join(mkl_root_dir, 'include')
-mkl_libs_path = os.path.join(mkl_root_dir, 'lib', 'intel64')
+    mkl_include_path = ''
+    mkl_libs_path = ''
+else:
+    mkl_include_path = os.path.join(mkl_root_dir, 'include')
+    mkl_libs_path = os.path.join(mkl_root_dir, 'lib', 'intel64')
 
 if cc.get_default_compiler() is 'msvc':
     cflags = ['/Ox']
