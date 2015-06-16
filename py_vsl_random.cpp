@@ -68,7 +68,7 @@ static PyObject* randn(PyObject *self, PyObject *args, PyObject *kw)
     return (PyObject*)arr;
 }
 
-static PyObject* rand(PyObject *self, PyObject *args, PyObject *kw)
+static PyObject* random_sample(PyObject *self, PyObject *args, PyObject *kw)
 {
     PyArrayObject* arr = NULL;
     PyObject *shape = NULL;
@@ -145,7 +145,7 @@ static PyMethodDef Methods[] =
 {
      {"randn", (PyCFunction)randn, METH_VARARGS | METH_KEYWORDS,
          "return ndarray of normally distributed variables using parallel VSL & OpenMP algorithms"},
-     {"rand", (PyCFunction)randn, METH_VARARGS | METH_KEYWORDS,
+     {"random_sample", (PyCFunction)random_sample, METH_VARARGS | METH_KEYWORDS,
          "return ndarray of normally distributed variables using parallel VSL & OpenMP algorithms"},
      {"rng", (PyCFunction)rng, METH_VARARGS | METH_KEYWORDS,
          "seed the random number generator"},
