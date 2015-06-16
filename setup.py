@@ -15,13 +15,16 @@ else:
 
 if cc.get_default_compiler() is 'msvc':
     cflags = ['/Ox']
-    vsl_compile_args = []
+    vsl_compile_args = ['/openmp']
     vsl_link_args = ['mkl_intel_lp64.lib', 'mkl_core.lib', 'mkl_intel_thread.lib', 'libiomp5md.lib']
+    omp_path = os.path.split(mkl_root_dir)[0]
+    omp_path = os.path.join(omp_path, 'compiler', 'lib', 'intel64')
 else:
     mkl_intel_lp64 = os.path.join(mkl_libs_path, 'libmkl_intel_lp64.a')
     mkl_core = os.path.join(mkl_libs_path, 'libmkl_core.a')
     mkl_gnu_thread = os.path.join(mkl_libs_path, 'libmkl_gnu_thread.a')
     vsl_compile_args = ['-fopenmp', '-m64']
+    omp_path = ''
     vsl_link_args=['-Wl,--start-group', mkl_intel_lp64, mkl_core, mkl_gnu_thread,\
     '-Wl,--end-group', '-ldl','-lpthread', '-lgomp']
     cflags = ['-O3']
@@ -32,7 +35,7 @@ matlab_random = Extension('matlab_random', sources=['py_matlab_random.cpp', 'mat
                           language='c++')
 vsl_random = Extension('vsl_random', sources=['py_vsl_random.cpp', 'vsl_random.cpp'],
                         include_dirs=[numpy.get_include(), mkl_include_path],
-                        library_dirs=[mkl_libs_path],
+                        library_dirs=[mkl_libs_path, omp_path],
                         extra_compile_args=vsl_compile_args,
                         extra_link_args=vsl_link_args,
                         language='c++')
