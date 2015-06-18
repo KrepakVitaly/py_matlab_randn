@@ -23,7 +23,7 @@ else:
     mkl_intel_lp64 = os.path.join(mkl_libs_path, 'libmkl_intel_lp64.a')
     mkl_core = os.path.join(mkl_libs_path, 'libmkl_core.a')
     mkl_gnu_thread = os.path.join(mkl_libs_path, 'libmkl_gnu_thread.a')
-    vsl_compile_args = ['-fopenmp', '-m64']
+    vsl_compile_args = ['-fopenmp', '-m64', '-g']
     omp_path = ''
     vsl_link_args=['-Wl,--start-group', mkl_intel_lp64, mkl_core, mkl_gnu_thread,\
     '-Wl,--end-group', '-ldl','-lpthread', '-lgomp']
