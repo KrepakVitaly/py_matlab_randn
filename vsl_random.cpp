@@ -1,9 +1,10 @@
 #include "vsl_random.h"
+#include <iostream>
 
-VSLRandom::VSLRandom()
+VSLRandom::VSLRandom(): num_procs(0)
 {
     num_procs = omp_get_num_procs();
-    streams = new VSLStreamStatePtr[num_procs];
+    streams.resize(num_procs);
     for (int i = 0; i < num_procs; ++i) {
         vslNewStream(&streams[i], VSL_BRNG_MT2203+i, 0);
     }
@@ -14,7 +15,30 @@ VSLRandom::~VSLRandom()
     for (int i = 0; i < num_procs; ++i) {
         vslDeleteStream(&streams[i]);
     }
-    delete[] streams;
+}
+
+VSLRandom::VSLRandom(const VSLRandom &obj)
+{
+    for (int i = 0; i < num_procs; ++i) {
+        vslDeleteStream(&streams[i]);
+    }
+    num_procs = obj.num_procs;
+    streams.resize(num_procs);
+    for (int i = 0; i < num_procs; ++i) {
+        vslCopyStream(&streams[i], obj.streams[i]);
+    }
+}
+
+VSLRandom& VSLRandom::operator=(const VSLRandom &rhs)
+{
+    for (int i = 0; i < num_procs; ++i) {
+        vslDeleteStream(&streams[i]);
+    }
+    num_procs = rhs.num_procs;
+    streams.resize(num_procs);
+    for (int i = 0; i < num_procs; ++i) {
+        vslCopyStream(&streams[i], rhs.streams[i]);
+    }
 }
 
 void VSLRandom::rng(int seed)

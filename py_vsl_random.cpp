@@ -4,9 +4,28 @@
 #include <numpy/arrayobject.h>
 #include "vsl_random.h"
 
-static VSLRandom mr;
+typedef struct {
+    PyObject_HEAD
+    VSLRandom mr;
+} Generator;
 
-static PyObject* randn(PyObject *self, PyObject *args, PyObject *kw)
+static void Generator_dealloc(Generator *self)
+{
+    self->mr.~VSLRandom();
+    self->ob_type->tp_free((PyObject*)self);
+}
+
+static PyObject* Generator_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    Generator *self;
+    self = (Generator*)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->mr = VSLRandom();
+    }
+    return (PyObject*)self;
+}
+
+static PyObject* randn(Generator *self, PyObject *args, PyObject *kw)
 {
     PyArrayObject* arr = NULL;
     PyObject *shape = NULL;
@@ -45,7 +64,7 @@ static PyObject* randn(PyObject *self, PyObject *args, PyObject *kw)
     }
     arr = (PyArrayObject*)PyArray_SimpleNew(tuple_size, arr_dims, NPY_DOUBLE);
     out = new double[random_length];
-    mr.randn(random_length, out);
+    self->mr.randn(random_length, out);
     arr_iter = NpyIter_New(arr, NPY_ITER_READWRITE, NPY_FORTRANORDER,
                             NPY_NO_CASTING, NULL);
     if (arr_iter == NULL) {
@@ -68,7 +87,7 @@ static PyObject* randn(PyObject *self, PyObject *args, PyObject *kw)
     return (PyObject*)arr;
 }
 
-static PyObject* random_sample(PyObject *self, PyObject *args, PyObject *kw)
+static PyObject* random_sample(Generator *self, PyObject *args, PyObject *kw)
 {
     PyArrayObject* arr = NULL;
     PyObject *shape = NULL;
@@ -107,7 +126,7 @@ static PyObject* random_sample(PyObject *self, PyObject *args, PyObject *kw)
     }
     arr = (PyArrayObject*)PyArray_SimpleNew(tuple_size, arr_dims, NPY_DOUBLE);
     out = new double[random_length];
-    mr.rand(random_length, out);
+    self->mr.rand(random_length, out);
     arr_iter = NpyIter_New(arr, NPY_ITER_READWRITE, NPY_FORTRANORDER,
                             NPY_NO_CASTING, NULL);
     if (arr_iter == NULL) {
@@ -130,14 +149,14 @@ static PyObject* random_sample(PyObject *self, PyObject *args, PyObject *kw)
     return (PyObject*)arr;
 }
 
-static PyObject* rng(PyObject *self, PyObject *args, PyObject *kw)
+static PyObject* rng(Generator *self, PyObject *args, PyObject *kw)
 {
     int seed;
     static char *keywords[] = {"seed", NULL};
     if (!PyArg_ParseTupleAndKeywords((PyObject*)args, kw, "i", keywords, &seed)) {
         return NULL;
     }
-    mr.rng(seed);
+    self->mr.rng(seed);
     return Py_BuildValue("");
 }
 
@@ -152,10 +171,64 @@ static PyMethodDef Methods[] =
      {NULL, NULL, 0, NULL}
 };
 
+static PyTypeObject GeneratorType {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "matlab_random.Generator",     /*tp_name*/
+    sizeof(Generator),             /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)Generator_dealloc, /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
+    "Generator objects",           /* tp_doc */
+    0,		               /* tp_traverse */
+    0,		               /* tp_clear */
+    0,		               /* tp_richcompare */
+    0,		               /* tp_weaklistoffset */
+    0,		               /* tp_iter */
+    0,		               /* tp_iternext */
+    Methods,               /* tp_methods */
+    0,             /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    0,      /* tp_init */
+    0,                         /* tp_alloc */
+    Generator_new,                 /* tp_new */
+};
+
 PyMODINIT_FUNC
 initvsl_random(void)
 {
-     (void) Py_InitModule("vsl_random", Methods);
-     /* IMPORTANT: this must be called */
-     import_array();
+    PyObject* m;
+    if (PyType_Ready(&GeneratorType) < 0) {
+        return;
+    }
+
+    m = Py_InitModule("vsl_random", Methods);
+
+    if (m == NULL) {
+        return;
+    }
+
+    Py_INCREF(&GeneratorType);
+    PyModule_AddObject(m, "Generator", (PyObject *)&GeneratorType);
+    /* IMPORTANT: this must be called */
+    import_array();
 }
