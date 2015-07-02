@@ -171,7 +171,7 @@ static PyMethodDef Methods[] =
      {NULL, NULL, 0, NULL}
 };
 
-static PyTypeObject GeneratorType {
+static PyTypeObject GeneratorType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
     "matlab_random.Generator",     /*tp_name*/
