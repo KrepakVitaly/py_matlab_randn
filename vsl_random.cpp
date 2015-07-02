@@ -39,6 +39,7 @@ VSLRandom& VSLRandom::operator=(const VSLRandom &rhs)
     for (int i = 0; i < num_procs; ++i) {
         vslCopyStream(&streams[i], rhs.streams[i]);
     }
+    return *this;
 }
 
 void VSLRandom::rng(int seed)
