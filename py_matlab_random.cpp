@@ -47,7 +47,20 @@ static PyObject* randn(Generator *self, PyObject *args, PyObject *kw)
         arr_dims = (npy_intp*)malloc(sizeof(npy_intp));
         arr_dims[0] = random_length;
         tuple_size = 1;
-    } else {
+    } else if (PyList_Check(shape)) {
+        tuple_size = PyList_Size(shape);
+        arr_dims = (npy_intp*)malloc(tuple_size*sizeof(npy_intp));
+        for (i = 0; i < tuple_size; ++i) {
+			tuple_item = PyList_GetItem(shape, i);
+            if (PyInt_Check(tuple_item) || PyLong_Check(tuple_item)) {
+                tuple_item_long = PyInt_AsLong(tuple_item);
+                arr_dims[i] = tuple_item_long;
+                random_length *= tuple_item_long;
+            } else {
+                return NULL;
+            }
+        }
+    } else if (PyTuple_Check(shape)) {
         tuple_size = PyTuple_Size(shape);
         arr_dims = (npy_intp*)malloc(tuple_size*sizeof(npy_intp));
         for (i = 0; i < tuple_size; ++i) {
@@ -60,6 +73,9 @@ static PyObject* randn(Generator *self, PyObject *args, PyObject *kw)
                 return NULL;
             }
         }
+    } else {
+        PyErr_SetString(PyExc_ValueError, "randn takes only int, long, tuple or list as size parameter");
+        return NULL;
     }
     arr = (PyArrayObject*)PyArray_SimpleNew(tuple_size, arr_dims, NPY_DOUBLE);
     out = new double[random_length];
