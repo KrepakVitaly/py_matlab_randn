@@ -102,6 +102,84 @@ static PyObject* randn(Generator *self, PyObject *args, PyObject *kw)
     return (PyObject*)arr;
 }
 
+static PyObject* random_sample(Generator *self, PyObject *args, PyObject *kw)
+{
+    PyArrayObject* arr = NULL;
+    PyObject *shape = NULL;
+    static char *keywords[] = {"shape", NULL};
+    NpyIter *arr_iter;
+    NpyIter_IterNextFunc *arr_iternext;
+    double **arr_dataptr;
+    npy_intp *arr_dims;
+    double *out;
+    int tuple_size = 0;
+    PyObject *tuple_item = NULL;
+    long tuple_item_long = 0;
+    long random_length = 1;
+    int i;
+    if (!PyArg_ParseTupleAndKeywords((PyObject*)args, kw, "O", keywords, &shape)) {
+        return NULL;
+    }
+    if (PyInt_Check(shape)) {
+        random_length = PyInt_AsLong(shape);
+        arr_dims = (npy_intp*)malloc(sizeof(npy_intp));
+        arr_dims[0] = random_length;
+        tuple_size = 1;
+    } else if (PyList_Check(shape)) {
+        tuple_size = PyList_Size(shape);
+        arr_dims = (npy_intp*)malloc(tuple_size*sizeof(npy_intp));
+        for (i = 0; i < tuple_size; ++i) {
+            tuple_item = PyList_GetItem(shape, i);
+            if (PyInt_Check(tuple_item) || PyLong_Check(tuple_item)) {
+                tuple_item_long = PyInt_AsLong(tuple_item);
+                arr_dims[i] = tuple_item_long;
+                random_length *= tuple_item_long;
+            } else {
+                return NULL;
+            }
+        }
+    } else if (PyTuple_Check(shape)) {
+        tuple_size = PyTuple_Size(shape);
+        arr_dims = (npy_intp*)malloc(tuple_size*sizeof(npy_intp));
+        for (i = 0; i < tuple_size; ++i) {
+            tuple_item = PyTuple_GetItem(shape, i);
+            if (PyInt_Check(tuple_item) || PyLong_Check(tuple_item)) {
+                tuple_item_long = PyInt_AsLong(tuple_item);
+                arr_dims[i] = tuple_item_long;
+                random_length *= tuple_item_long;
+            } else {
+                return NULL;
+            }
+        }
+    } else {
+        PyErr_SetString(PyExc_ValueError, "random_sample takes only int, long, tuple or list as size parameter");
+        return NULL;
+    }
+    arr = (PyArrayObject*)PyArray_SimpleNew(tuple_size, arr_dims, NPY_DOUBLE);
+    out = new double[random_length];
+    self->mr.rand(random_length, out);
+    arr_iter = NpyIter_New(arr, NPY_ITER_READWRITE, NPY_FORTRANORDER,
+                            NPY_NO_CASTING, NULL);
+    if (arr_iter == NULL) {
+        return NULL;
+    }
+    arr_iternext = NpyIter_GetIterNext(arr_iter, NULL);
+    if (arr_iternext == NULL) {
+        NpyIter_Deallocate(arr_iter);
+        return NULL;
+    }
+    arr_dataptr = (double **) NpyIter_GetDataPtrArray(arr_iter);
+    i = 0;
+    do {
+        **arr_dataptr = out[i++];
+    } while(arr_iternext(arr_iter));
+    delete[] out;
+    NpyIter_Deallocate(arr_iter);
+    //Py_INCREF(arr);
+    free(arr_dims);
+    return (PyObject*)arr;
+}
+
 static PyObject* rng(Generator *self, PyObject *args, PyObject *kw)
 {
     int seed;
@@ -116,6 +194,8 @@ static PyObject* rng(Generator *self, PyObject *args, PyObject *kw)
 static PyMethodDef Methods[] =
 {
      {"randn", (PyCFunction)randn, METH_VARARGS | METH_KEYWORDS,
+         "return ndarray of normally distributed variables using matlab algorithm"},
+     {"random_sample", (PyCFunction)random_sample, METH_VARARGS | METH_KEYWORDS,
          "return ndarray of normally distributed variables using matlab algorithm"},
      {"rng", (PyCFunction)rng, METH_VARARGS | METH_KEYWORDS,
          "seed the random number generator"},

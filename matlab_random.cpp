@@ -207,6 +207,13 @@ void MatlabRandn::randn(long long size, double *arr)
     return;
 }
 
+void MatlabRandn::rand(long long size, double *arr)
+{
+    for (int k = 0; k < size; ++k)
+        arr[k] = genrandu();
+    return;
+}
+
 void MatlabRandn::genrand_int_vector(unsigned int u[2])
 {
     unsigned int mti;
